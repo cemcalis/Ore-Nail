@@ -109,26 +109,53 @@ exports.createAppointment = async (req, res) => {
       return res.status(409).json({ message: 'Time slot already booked' });
     }
 
-    const appointment = new Appointment({
-      customerName,
-      customerEmail,
-      customerPhone,
-      serviceId,
-      appointmentDate: new Date(appointmentDate),
-      startTime,
-      endTime,
-      totalPrice: service.price,
-      notes,
-    });
+    // In-memory appointments for demo mode
+    if (!global.demoAppointments) global.demoAppointments = [];
 
-    await appointment.save();
-    await appointment.populate('serviceId', 'name price duration');
+    let appointment;
+    try {
+      appointment = new Appointment({
+        customerName,
+        customerEmail,
+        customerPhone,
+        serviceId,
+        appointmentDate: new Date(appointmentDate),
+        startTime,
+        endTime,
+        totalPrice: service.price,
+        notes,
+      });
+
+      await appointment.save();
+      await appointment.populate('serviceId', 'name price duration');
+    } catch (saveError) {
+      console.warn('MongoDB offline - saving appointment to memory');
+      const demoApt = {
+        _id: 'demo_' + Date.now(),
+        customerName,
+        customerEmail,
+        customerPhone,
+        serviceId: service, // Nest the service object directly for demo
+        appointmentDate: new Date(appointmentDate),
+        startTime,
+        endTime,
+        totalPrice: service.price,
+        notes,
+        status: 'pending'
+      };
+      global.demoAppointments.push(demoApt);
+      return res.status(201).json({
+        message: 'Appointment created (demo mode)',
+        appointment: demoApt,
+      });
+    }
 
     res.status(201).json({
       message: 'Appointment created successfully',
       appointment,
     });
   } catch (error) {
+    console.error('Final Appointment error:', error.message);
     res.status(500).json({ message: 'Error creating appointment', error: error.message });
   }
 };
@@ -225,22 +252,32 @@ exports.getAvailableSlots = async (req, res) => {
       end: apt.endTime,
     }));
 
-    // Generate available slots (9 AM to 5 PM, 30-minute intervals)
+    // Generate available slots (9 AM to 7 PM, 15-minute intervals for flexibility)
     const availableSlots = [];
-    for (let hour = 9; hour < 17; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
+    const startHour = 9;
+    const endHour = 19; // Expanded hours to 7 PM
+
+    for (let hour = startHour; hour < endHour; hour++) {
+      for (let minute = 0; minute < 60; minute += 15) {
         const slotTime = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-        const [slotHour, slotMinute] = slotTime.split(':').map(Number);
-        const slotEndHour = slotHour + Math.floor((slotMinute + service.duration) / 60);
-        const slotEndMinute = (slotMinute + service.duration) % 60;
+
+        // Calculate slot end time based on the SELECTED service's duration
+        const totalMinutes = hour * 60 + minute + service.duration;
+        const slotEndHour = Math.floor(totalMinutes / 60);
+        const slotEndMinute = totalMinutes % 60;
         const slotEnd = `${String(slotEndHour).padStart(2, '0')}:${String(slotEndMinute).padStart(2, '0')}`;
 
-        // Check if slot conflicts with booked appointments
+        // Stop if the appointment would end after closing time
+        if (slotEndHour > endHour || (slotEndHour === endHour && slotEndMinute > 0)) {
+          continue;
+        }
+
+        // Check if slot conflicts with booked appointments (of ANY duration)
         const isAvailable = !bookedSlots.some(
-          (booked) =>
-            (slotTime >= booked.start && slotTime < booked.end) ||
-            (slotEnd > booked.start && slotEnd <= booked.end) ||
-            (slotTime <= booked.start && slotEnd >= booked.end)
+          (booked) => {
+            // Overlap condition: (s1 < e2) AND (e1 > s2)
+            return slotTime < booked.end && slotEnd > booked.start;
+          }
         );
 
         if (isAvailable) {

@@ -192,10 +192,21 @@ function BookingPage() {
 
   const daysOfWeek = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cts'];
 
+  const getEndTime = (startTime, duration) => {
+    if (!startTime || !duration) return '';
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes + duration;
+    const endHours = Math.floor(totalMinutes / 60);
+    const endMinutes = totalMinutes % 60;
+    return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+  };
+
+  const selectedServiceData = services.find(s => s._id === selectedService);
+
   return (
     <div className="booking-page">
       <div className="booking-container">
-        <h1>🎀 Randevu Al</h1>
+        <h1>🎀 Randevu Seçimi</h1>
 
         {message && (
           <div className={`message ${message.includes('✓') ? 'success' : 'error'}`}>
@@ -206,8 +217,7 @@ function BookingPage() {
         <form onSubmit={handleBookAppointment}>
           {/* KIŞISEL BİLGİLER */}
           <div className="form-section">
-            <div className="form-section-title">Kişisel Bilgiler</div>
-
+            <h2 className="form-section-title">Kişisel Bilgiler</h2>
             <div className="form-group">
               <label>Ad Soyad *</label>
               <input
@@ -218,36 +228,35 @@ function BookingPage() {
                 required
               />
             </div>
-
-            <div className="form-group">
-              <label>E-mail *</label>
-              <input
-                type="email"
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-                placeholder="E-mail adresiniz"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Telefon *</label>
-              <input
-                type="tel"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="Telefon numaranız"
-                required
-              />
+            <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div>
+                <label>E-mail *</label>
+                <input
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="E-mail adresiniz"
+                  required
+                />
+              </div>
+              <div>
+                <label>Telefon *</label>
+                <input
+                  type="tel"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  placeholder="Telefon numaranız"
+                  required
+                />
+              </div>
             </div>
           </div>
 
           {/* RANDEVU SEÇİMİ */}
           <div className="form-section">
-            <div className="form-section-title">Randevu Seçimi</div>
-
+            <h2 className="form-section-title">Hizmet ve Tarih</h2>
             <div className="form-group">
-              <label>Hizmet Seç *</label>
+              <label>Hizmet Seçiniz *</label>
               <select
                 value={selectedService || ''}
                 onChange={(e) => handleServiceChange(e.target.value)}
@@ -256,88 +265,59 @@ function BookingPage() {
                 <option value="">Hizmet Seçiniz</option>
                 {services.map((service) => (
                   <option key={service._id} value={service._id}>
-                    {service.name} - {service.price} ₺ ({service.duration} min)
+                    {service.name} - {service.price} ₺ ({service.duration} dk)
                   </option>
                 ))}
               </select>
             </div>
 
             {selectedService && (
-              <>
-                {/* TAKVİM */}
-                <div className="calendar-section">
-                  <div className="calendar-header">
-                    <button type="button" onClick={previousMonth} className="nav-button">◀</button>
-                    <h3>{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</h3>
-                    <button type="button" onClick={nextMonth} className="nav-button">▶</button>
-                  </div>
-
-                  <div className="calendar-weekdays">
-                    {daysOfWeek.map((day, idx) => (
-                      <div key={`weekday-${idx}`} className="weekday">{day}</div>
-                    ))}
-                  </div>
-
-                  <div className="calendar-grid">
-                    {(() => {
-                      const daysInMonth = getDaysInMonth(currentMonth);
-                      const firstDay = getFirstDayOfMonth(currentMonth);
-                      const days = [];
-
-                      for (let i = 0; i < firstDay; i++) {
-                        days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
-                      }
-
-                      for (let day = 1; day <= daysInMonth; day++) {
-                        const isPast = isDatePast(day);
-                        const isBooked = isDateBooked(day);
-                        const isSelected = isDateSelected(day);
-
-                        days.push(
-                          <button
-                            key={`day-${day}`}
-                            type="button"
-                            className={`calendar-day ${isPast ? 'past' : ''} ${isBooked ? 'booked' : ''} ${isSelected ? 'selected' : ''}`}
-                            onClick={() => !isPast && !isBooked && handleDateSelect(day)}
-                            disabled={isPast || isBooked}
-                            title={isPast ? 'Geçmiş tarih' : isBooked ? 'Dolu' : 'Seç'}
-                          >
-                            {day}
-                          </button>
-                        );
-                      }
-
-                      return days;
-                    })()}
-                  </div>
-
-                  <div className="calendar-legend">
-                    <div className="legend-item">
-                      <div className="legend-color available"></div>
-                      <span>Uygun</span>
-                    </div>
-                    <div className="legend-item">
-                      <div className="legend-color booked"></div>
-                      <span>Dolu</span>
-                    </div>
-                    <div className="legend-item">
-                      <div className="legend-color past"></div>
-                      <span>Geçmiş</span>
-                    </div>
-                  </div>
+              <div className="calendar-section">
+                <div className="calendar-header">
+                  <button type="button" onClick={previousMonth} className="nav-button">◀</button>
+                  <h3>{monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}</h3>
+                  <button type="button" onClick={nextMonth} className="nav-button">▶</button>
                 </div>
+                <div className="calendar-weekdays">
+                  {daysOfWeek.map((day) => (<div key={day} className="weekday">{day}</div>))}
+                </div>
+                <div className="calendar-grid">
+                  {(() => {
+                    const daysInMonth = getDaysInMonth(currentMonth);
+                    const firstDay = getFirstDayOfMonth(currentMonth);
+                    const days = [];
+                    for (let i = 0; i < firstDay; i++) {
+                      days.push(<div key={`empty-${i}`} className="calendar-day empty"></div>);
+                    }
+                    for (let day = 1; day <= daysInMonth; day++) {
+                      const isPast = isDatePast(day);
+                      const isBooked = isDateBooked(day);
+                      const isSelected = isDateSelected(day);
+                      days.push(
+                        <button
+                          key={`day-${day}`}
+                          type="button"
+                          className={`calendar-day ${isPast ? 'past' : ''} ${isBooked ? 'booked' : ''} ${isSelected ? 'selected' : ''}`}
+                          onClick={() => !isPast && !isBooked && handleDateSelect(day)}
+                          disabled={isPast || isBooked}
+                        >
+                          {day}
+                        </button>
+                      );
+                    }
+                    return days;
+                  })()}
+                </div>
+              </div>
+            )}
 
-                {/* SEÇİLİ TARİH */}
-                {appointmentDate && (
-                  <div className="selected-date-info">
-                    <p><strong>Seçili Tarih:</strong> {new Date(appointmentDate + 'T00:00:00').toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                  </div>
-                )}
-
-                {/* UYGUN SAATLERİ GÖR */}
-                {appointmentDate && availableSlots.length > 0 && (
-                  <div className="form-group">
-                    <label>Saat Seç *</label>
+            {appointmentDate && (
+              <div className="time-section animate-fade">
+                <h2 className="form-section-title">Saat Seçimi</h2>
+                {loading ? (
+                  <div className="loading-slots">Uygun saatler kontrol ediliyor...</div>
+                ) : availableSlots.length > 0 ? (
+                  <>
                     <div className="time-slots">
                       {availableSlots.map((slot) => (
                         <button
@@ -350,36 +330,33 @@ function BookingPage() {
                         </button>
                       ))}
                     </div>
-                  </div>
+                    {selectedSlot && selectedServiceData && (
+                      <div className="slot-confirmation-hint" style={{ marginTop: '20px', padding: '15px', background: 'var(--pk-50)', borderRadius: '16px', color: 'var(--pk-700)', fontWeight: '700', textAlign: 'center', border: '1px solid var(--pk-200)' }}>
+                        🌸 Randevu Süresi: {selectedSlot} - {getEndTime(selectedSlot, selectedServiceData.duration)}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="no-slots-message">⚠️ Bu tarihte uygun saat bulunmamaktadır.</div>
                 )}
-
-                {appointmentDate && availableSlots.length === 0 && !loading && (
-                  <div className="no-slots-message">
-                    ⚠️ Bu tarihte uygun saat bulunmamaktadır. Lütfen başka bir tarih seçiniz.
-                  </div>
-                )}
-              </>
+              </div>
             )}
           </div>
 
-          {/* NOTLAR */}
           <div className="form-section">
-            <div className="form-section-title">Ek Bilgiler</div>
-
+            <h2 className="form-section-title">Ek Notlar</h2>
             <div className="form-group">
-              <label>Notlar</label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Özel istekleriniz varsa yazınız..."
-                rows="4"
+                placeholder="Randevunuzla ilgili belirtmek istediğiniz detaylar..."
+                rows="3"
               />
             </div>
           </div>
 
-          {/* BUTON */}
           <button type="submit" disabled={loading} className="btn-primary">
-            {loading ? '⏳ Randevu Alınıyor...' : '✓ Randevu Al'}
+            {loading ? '⏳ Lütfen Bekleyin...' : '✓ Randevuyu Tamamla'}
           </button>
         </form>
       </div>
