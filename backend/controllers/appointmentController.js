@@ -70,13 +70,27 @@ exports.createAppointment = async (req, res) => {
     // Validate service exists
     let service;
     try {
-      service = await Service.findById(serviceId).maxTimeMS(5000);
+      service = await Service.findById(serviceId).maxTimeMS(3000);
     } catch (err) {
-      return res.status(503).json({ message: 'Service database temporarily unavailable' });
+      // MongoDB offline - try to find in demoServices
+      const { demoServices } = require('./serviceController');
+      if (demoServices) {
+        service = demoServices.find(s => s._id === serviceId);
+      }
+
+      if (!service) {
+        return res.status(503).json({ message: 'Service database temporarily unavailable' });
+      }
     }
 
     if (!service) {
-      return res.status(404).json({ message: 'Service not found' });
+      // One last check in demoServices if it was a 404 from DB but we are in demo mode
+      const { demoServices } = require('./serviceController');
+      service = demoServices?.find(s => s._id === serviceId);
+
+      if (!service) {
+        return res.status(404).json({ message: 'Service not found' });
+      }
     }
 
     // Calculate end time based on service duration
