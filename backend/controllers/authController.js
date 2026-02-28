@@ -10,7 +10,7 @@ exports.register = async (req, res) => {
   users.push(newUser);
   writeData('users', users);
 
-  const token = jwt.sign({ userId: newUser.id, isAdmin: false }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+  const token = jwt.sign({ userId: newUser.id, isAdmin: false }, process.env.JWT_SECRET || 'secret_key_123', { expiresIn: '7d' });
   res.status(201).json({ token, user: { id: newUser.id, name, email, isAdmin: false } });
 };
 
@@ -21,7 +21,7 @@ exports.login = async (req, res) => {
 
   if (!user) return res.status(401).json({ message: 'Geçersiz e-posta veya şifre' });
 
-  const token = jwt.sign({ userId: user.id, isAdmin: user.isAdmin }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+  const token = jwt.sign({ userId: user.id, isAdmin: user.isAdmin }, process.env.JWT_SECRET || 'secret_key_123', { expiresIn: '7d' });
   res.json({ token, user: { id: user.id, name: user.name, email: user.email, isAdmin: user.isAdmin } });
 };
 
@@ -31,7 +31,7 @@ exports.adminLogin = async (req, res) => {
 
   if (password !== ADMIN_PASSWORD) return res.status(401).json({ message: 'Geçersiz admin şifresi' });
 
-  const token = jwt.sign({ userId: 'admin', isAdmin: true }, process.env.JWT_SECRET || 'secret', { expiresIn: '24h' });
+  const token = jwt.sign({ userId: 'admin', isAdmin: true }, process.env.JWT_SECRET || 'secret_key_123', { expiresIn: '24h' });
   res.json({ token, isAdmin: true });
 };
 

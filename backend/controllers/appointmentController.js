@@ -104,3 +104,32 @@ exports.getAvailableSlots = async (req, res) => {
   }
   res.json({ availableSlots });
 };
+
+exports.getUserAppointments = async (req, res) => {
+  const appointments = readData('appointments');
+  const services = readData('services');
+  const userAppointments = appointments.filter(a => a.userId === req.userId);
+
+  const detailed = userAppointments.map(apt => ({
+    ...apt,
+    serviceId: services.find(s => s._id === apt.serviceId) || { name: 'Unknown' }
+  }));
+
+  res.json(detailed);
+};
+
+exports.cancelAppointment = async (req, res) => {
+  const appointments = readData('appointments');
+  const index = appointments.findIndex(a => a._id === req.params.id);
+
+  if (index === -1) return res.status(404).json({ message: 'Appointment not found' });
+
+  // Check ownership or admin
+  if (appointments[index].userId !== req.userId && !req.isAdmin) {
+    return res.status(403).json({ message: 'Not authorized' });
+  }
+
+  appointments[index].status = 'cancelled';
+  writeData('appointments', appointments);
+  res.json({ message: 'Appointment cancelled', appointment: appointments[index] });
+};
