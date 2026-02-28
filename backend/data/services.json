@@ -1,0 +1,26 @@
+[
+  {
+    "_id": "1",
+    "name": "Protez Tırnak Tasarımı",
+    "description": "Özel tasarım protez tırnaklar",
+    "price": 150,
+    "duration": 45,
+    "isActive": true
+  },
+  {
+    "_id": "2",
+    "name": "Tırnak Tamir",
+    "description": "Hasarlı tırnak tamiri",
+    "price": 50,
+    "duration": 30,
+    "isActive": true
+  },
+  {
+    "_id": "3",
+    "name": "Tırnak Bakımı",
+    "description": "Profesyonel tırnak bakımı",
+    "price": 75,
+    "duration": 60,
+    "isActive": true
+  }
+]

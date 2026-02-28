@@ -10,10 +10,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/orenail')
-  .then(() => console.log('✓ Connected to MongoDB'))
-  .catch((err) => console.error('✗ MongoDB connection error:', err));
+console.log('🚀 App running in Local Data Mode (No MongoDB)');
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
