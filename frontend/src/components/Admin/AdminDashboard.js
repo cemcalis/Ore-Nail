@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './AdminDashboard.css';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5555/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:5555/api' : `${window.location.origin}/api`);
 
 function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('calendar');
@@ -37,7 +37,7 @@ function AdminDashboard() {
 
   const fetchAppointments = useCallback(async () => {
     if (!adminToken) return;
-    
+
     try {
       setLoading(true);
       const response = await axios.get(`${API_BASE_URL}/appointments`, {
@@ -69,7 +69,7 @@ function AdminDashboard() {
 
   useEffect(() => {
     if (!adminToken) return;
-    
+
     if (activeTab === 'calendar' || activeTab === 'appointments') {
       fetchAppointments();
     } else if (activeTab === 'services') {

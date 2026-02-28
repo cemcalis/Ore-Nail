@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './AdminLogin.css';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5555/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || (window.location.origin.includes('localhost') ? 'http://localhost:5555/api' : `${window.location.origin}/api`);
 
 function AdminLogin({ setAdminLoggedIn }) {
   const [password, setPassword] = useState('');
